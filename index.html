@@ -1,97 +1,122 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#000000">
-<title>For Moulik</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>For Moulik ❤️</title>
 <style>
-  *{box-sizing:border-box}
-  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;color:#fff}
-  body{font-family:Georgia,"Times New Roman",serif}
-  canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
-  .caption{position:fixed;left:0;right:0;bottom: max(34px, env(safe-area-inset-bottom));text-align:center;padding:0 22px;z-index:2;pointer-events:none}
-  .tap{font:11px/1.5 Arial,sans-serif;letter-spacing:.23em;text-transform:uppercase;color:rgba(255,255,255,.55);transition:opacity .5s}
-  .note{font-size:clamp(20px,5vw,29px);line-height:1.45;opacity:0;transform:translateY(10px);transition:opacity .8s,transform .8s;text-shadow:0 0 18px rgba(255,255,255,.22)}
-  .note.show{opacity:1;transform:translateY(0)}
-  .small{font:10px Arial,sans-serif;letter-spacing:.18em;color:rgba(255,255,255,.45);margin-top:10px}
-  .caption.revealed .tap{opacity:0;height:0}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#050006}
+canvas{position:fixed;inset:0;width:100%;height:100%}
+#hint{position:fixed;bottom:35px;width:100%;text-align:center;color:#e6a1c5;font:12px Arial;letter-spacing:2px;opacity:0}
+#msg{position:fixed;inset:0;display:grid;place-items:center;text-align:center;background:#050006cc;color:#ffd9ec;font:clamp(25px,6vw,42px) Georgia;line-height:1.5;opacity:0;visibility:hidden;transition:1s}
+#msg.show{opacity:1;visibility:visible}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
-<div class="caption" id="caption">
-  <div class="tap">tap anywhere</div>
-  <div class="note" id="note">I love you, Moulik.<br>That's the whole message. ❤️</div>
-  <div class="small" id="small"></div>
-</div>
+<div id="hint">TAP ANYWHERE ❤️</div>
+<div id="msg">I love you, Moulik.<br>That's the whole message.<br>♥</div>
+
 <script>
-(() => {
-  const canvas=document.getElementById('c'), ctx=canvas.getContext('2d');
-  let w,h,dpr, particles=[], stars=[];
-  const rand=(a,b)=>a+Math.random()*(b-a);
-  function heart(t, scale=1){
-    return {x:16*Math.pow(Math.sin(t),3)*scale,
-      y:-(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t))*scale};
-  }
-  function resize(){
-    dpr=Math.min(devicePixelRatio||1,2); w=innerWidth; h=innerHeight;
-    canvas.width=Math.floor(w*dpr); canvas.height=Math.floor(h*dpr);
-    ctx.setTransform(dpr,0,0,dpr,0,0);
-    const size=Math.min(w*.0145,h*.0095);
-    const cx=w/2, cy=h*.39;
-    particles=[];
-    // Dense particles tracing the edge and filling the heart.
-    for(let i=0;i<1050;i++){
-      const t=rand(0,Math.PI*2), edge=heart(t);
-      const fill=Math.sqrt(Math.random());
-      const x=edge.x*fill, y=edge.y*fill;
-      particles.push({x:cx+x*size,y:cy+y*size,
-        ox:x,oy:y, r:rand(.65,2.25), phase:rand(0,Math.PI*2),
-        speed:rand(.45,1.5), bright:rand(.35,1), edge:Math.random()<.29});
-    }
-    stars=[];
-    for(let i=0;i<95;i++) stars.push({x:rand(0,w),y:rand(0,h),r:rand(.35,1.2),a:rand(.08,.42),p:rand(0,6.28)});
-  }
-  let start=performance.now(), revealed=false;
-  function draw(now){
-    const time=(now-start)/1000, pulse=1+.035*Math.sin(time*2.3)+.012*Math.sin(time*4.6);
-    ctx.clearRect(0,0,w,h);
-    // faint background stars
-    for(const s of stars){
-      const a=s.a*(.55+.45*Math.sin(time*.8+s.p));
-      ctx.fillStyle=`rgba(225,230,245,${a})`;
-      ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fill();
-    }
-    const size=Math.min(w*.0145,h*.0095), cx=w/2, cy=h*.39;
-    // Soft glow behind the particle heart
-    const glow=ctx.createRadialGradient(cx,cy,10,cx,cy,Math.min(w,h)*.42);
-    glow.addColorStop(0,'rgba(175,185,210,.12)');glow.addColorStop(1,'rgba(0,0,0,0)');
-    ctx.fillStyle=glow;ctx.fillRect(0,0,w,h);
-    for(const p of particles){
-      const shimmer=.35+.65*(.5+.5*Math.sin(time*p.speed+p.phase));
-      const drift=Math.sin(time*.7+p.phase)*.75;
-      const x=cx+p.ox*size*pulse+drift;
-      const y=cy+p.oy*size*pulse+Math.cos(time*.6+p.phase)*.65;
-      const alpha=Math.min(1,shimmer*p.bright*(p.edge?.95:.72));
-      const radius=p.r*(p.edge?1.15:1)*(0.85+.18*Math.sin(time*1.7+p.phase));
-      ctx.beginPath();ctx.arc(x,y,radius,0,Math.PI*2);
-      ctx.fillStyle=`rgba(${p.edge?255:210},${p.edge?246:216},${p.edge?250:232},${alpha})`;
-      ctx.shadowBlur=p.edge?8:3;ctx.shadowColor='rgba(255,255,255,.8)';ctx.fill();
-    }
-    ctx.shadowBlur=0;
-    requestAnimationFrame(draw);
-  }
-  function reveal(){
-    if(revealed)return;
-    revealed=true;
-    document.getElementById('note').classList.add('show');
-    document.getElementById('caption').classList.add('revealed');
-  }
-  addEventListener('resize',resize);
-  addEventListener('pointerdown',reveal,{once:true});
-  resize();requestAnimationFrame(draw);
-})();
+const c=document.getElementById("c"),ctx=c.getContext("2d");
+const hint=document.getElementById("hint"),msg=document.getElementById("msg");
+let W,H,cx,cy,S,particles=[],inner=[],rim=[],phase=0,start=performance.now(),tapped=false;
+
+function resize(){
+ const d=Math.min(devicePixelRatio||1,2);
+ W=innerWidth;H=innerHeight;
+ c.width=W*d;c.height=H*d;
+ ctx.setTransform(d,0,0,d,0,0);
+ cx=W/2;cy=H/2-10;
+ S=Math.min(W*.021,H*.018,12);
+}
+function heart(a,s){
+ return {x:16*Math.sin(a)**3*s,
+ y:-(13*Math.cos(a)-5*Math.cos(2*a)-2*Math.cos(3*a)-Math.cos(4*a))*s};
+}
+const rnd=(a,b)=>a+Math.random()*(b-a);
+
+function create(){
+ particles=[];inner=[];rim=[];
+ for(let i=0;i<1500;i++){
+  let p=heart(rnd(0,Math.PI*2),rnd(2,15));
+  particles.push({x:rnd(-W,W*2),y:rnd(-H,H*2),
+  tx:cx+p.x*S,ty:cy+p.y*S,r:rnd(.5,1.8),delay:Math.random()});
+ }
+ for(let i=0;i<5000;i++){
+  let a=rnd(0,Math.PI*2),p=heart(a,rnd(.5,15.5));
+  inner.push({x:cx+p.x*S,y:cy+p.y*S,len:rnd(4,14),
+  angle:a+rnd(-.9,.9),alpha:rnd(.25,.8),width:rnd(.5,1.5)});
+ }
+ for(let i=0;i<3500;i++){
+  let a=rnd(0,Math.PI*2),p=heart(a,16);
+  rim.push({x:cx+(p.x+rnd(-1.5,1.5))*S,
+  y:cy+(p.y+rnd(-1.5,1.5))*S,len:rnd(10,32),
+  angle:a+rnd(-.5,.5),alpha:rnd(.45,1),width:rnd(.8,2)});
+ }
+}
+function stroke(s,bright=false){
+ ctx.save();ctx.translate(s.x,s.y);ctx.rotate(s.angle);
+ ctx.strokeStyle=bright?
+ `rgba(255,${120+s.alpha*60},${190+s.alpha*50},${s.alpha})`:
+ `rgba(255,${90+s.alpha*70},${160+s.alpha*70},${s.alpha})`;
+ ctx.lineWidth=s.width;
+ ctx.shadowBlur=bright?10:3;ctx.shadowColor="#ff4d9d";
+ ctx.beginPath();ctx.moveTo(-s.len/2,0);ctx.lineTo(s.len/2,0);
+ ctx.stroke();ctx.restore();
+}
+function animate(now){
+ let elapsed=(now-start)/1000;
+ ctx.fillStyle="rgba(5,0,6,.22)";
+ ctx.fillRect(0,0,W,H);
+
+ if(phase===0){
+  let t=Math.min(1,elapsed/2.6);
+  particles.forEach(p=>{
+   let q=Math.max(0,Math.min(1,(t-p.delay*.45)/.55));
+   q=q*q*(3-2*q);
+   let x=p.x+(p.tx-p.x)*q,y=p.y+(p.ty-p.y)*q;
+   ctx.beginPath();ctx.fillStyle=`rgba(255,120,190,${.2+.8*q})`;
+   ctx.shadowBlur=8;ctx.shadowColor="#ff4d9d";
+   ctx.arc(x,y,p.r,0,Math.PI*2);ctx.fill();
+  });
+  if(t>=1){phase=1;start=now}
+ }
+ else if(phase===1){
+  particles.forEach(p=>{
+   ctx.beginPath();ctx.fillStyle="rgba(255,115,181,.55)";
+   ctx.arc(p.tx,p.ty,p.r*.7,0,Math.PI*2);ctx.fill();
+  });
+  let t=Math.min(1,elapsed/4.8);
+  for(let i=0;i<Math.floor(inner.length*t);i++)stroke(inner[i]);
+  if(t>=1){phase=2;start=now}
+ }
+ else if(phase===2){
+  inner.forEach(s=>stroke(s));
+  let t=Math.min(1,elapsed/2.8);
+  for(let i=0;i<Math.floor(rim.length*t);i++)stroke(rim[i],true);
+  if(t>=1){phase=3;start=now;hint.style.opacity=1}
+ }
+ else{
+  let pulse=1+Math.sin(now/650)*.025;
+  ctx.save();ctx.translate(cx,cy);ctx.scale(pulse,pulse);ctx.translate(-cx,-cy);
+  inner.forEach(s=>stroke(s));
+  rim.forEach(s=>stroke(s,true));
+  ctx.restore();
+ }
+ requestAnimationFrame(animate);
+}
+function init(){
+ resize();create();
+ ctx.fillStyle="#050006";ctx.fillRect(0,0,W,H);
+ requestAnimationFrame(animate);
+}
+window.addEventListener("resize",()=>{resize();create()});
+window.addEventListener("pointerdown",()=>{
+ if(phase===3&&!tapped){tapped=true;msg.classList.add("show");hint.style.opacity=0}
+});
+init();
 </script>
 </body>
 </html>
